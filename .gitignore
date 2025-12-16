@@ -1,0 +1,65 @@
+.DS_Store
+
+application/cache/*
+!application/cache/index.html
+
+application/logs/*
+!application/logs/index.html
+
+!application/*/.htaccess
+
+composer.lock
+tests/mocks/database/ci_test.sqlite
+
+user_guide_src/build/*
+user_guide_src/cilexer/build/*
+user_guide_src/cilexer/dist/*
+user_guide_src/cilexer/pycilexer.egg-info/*
+/vendor/
+
+# IDE Files
+#-------------------------
+/nbproject/
+.idea/*
+
+## Sublime Text cache files
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+/tests/tests/
+/tests/results/
+
+
+# =========================
+# Node.js (WA Server)
+# =========================
+wa-server/node_modules/
+wa-server/.env
+wa-server/auth_info_baileys/
+
+# =========================
+# Composer
+# =========================
+vendor/
+
+# =========================
+# CodeIgniter 3
+# =========================
+application/cache/*
+application/logs/*
+!application/cache/index.html
+!application/logs/index.html
+
+# =========================
+# Uploads (user files)
+# =========================
+assets/uploads/
+assets/uploads/**
+
+# =========================
+# Environment
+# =========================
+.env
+
