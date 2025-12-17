@@ -23,6 +23,25 @@ $status_magang = $this->db
         </div>
         <?php endif; ?>
     </div>
+	<?php 
+// Ambil data pendaftar terbaru untuk user ini
+$pendaftar = $this->db->get_where('pendaftar', ['user_id' => $this->session->userdata('user_id')])->row();
+
+if($pendaftar && !empty($pendaftar->file_surat_balasan)): 
+?>
+    <div class="col-md-12 mb-3">
+        <div class="alert alert-info">
+            <h5><i class="icon fas fa-envelope-open-text"></i> Surat Balasan Magang</h5>
+            Surat balasan resmi dari BPS Provinsi Banten telah terbit. Silakan unduh sebagai bukti penerimaan.
+            <br>
+            <a href="<?= base_url('assets/uploads/surat_balasan/' . $pendaftar->file_surat_balasan) ?>" 
+               target="_blank" 
+               class="btn btn-light text-info font-weight-bold mt-2">
+               <i class="fas fa-download"></i> Download Surat Balasan
+            </a>
+        </div>
+    </div>
+<?php endif; ?>
 
     <div class="col-md-12">
         <div class="card">

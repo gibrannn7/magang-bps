@@ -27,70 +27,68 @@ class Auth extends CI_Controller {
     }
 
     public function process_login()
-    {
-        // 1. Validasi Captcha Terlebih Dahulu
-        $input_captcha = $this->input->post('captcha');
-        $real_captcha  = $this->session->userdata('captcha_answer');
+{
+    // 1. Validasi Captcha (CODE LAMA TETAP SAMA)
+    $input_captcha = $this->input->post('captcha');
+    $real_captcha  = $this->session->userdata('captcha_answer');
 
-        if ($input_captcha === NULL || $input_captcha != $real_captcha) {
-            $this->session->set_flashdata('error', 'Hasil penjumlahan/pengurangan salah!');
-            redirect('auth/login');
-            return;
-        }
-
-        // 2. Lanjut ke Validasi User
-        $username = $this->input->post('username', TRUE);
-        $password = $this->input->post('password');
-
-        $user = $this->db->get_where('users', ['username' => $username])->row();
-
-        if ($user) {
-            // Verifikasi Hash Password
-            if (password_verify($password, $user->password)) {
-                
-                // --- TASK 3: AMBIL FOTO PROFIL DARI BERKAS PENDAFTAR ---
-                $foto_profil = null;
-                
-                // Cek apakah dia peserta (ada data pendaftar)
-                $pendaftar = $this->db->get_where('pendaftar', ['user_id' => $user->id])->row();
-                
-                if ($pendaftar) {
-                    $doc_foto = $this->db->get_where('dokumen', [
-                        'pendaftar_id' => $pendaftar->id, 
-                        'jenis_dokumen' => 'foto'
-                    ])->row();
-
-                    if ($doc_foto) {
-                        $foto_profil = $doc_foto->file_path;
-                    }
-                }
-
-                $sess_data = [
-                    'user_id' => $user->id,
-                    'username' => $user->username,
-                    'role' => $user->role,
-                    'nama_lengkap' => $user->nama_lengkap,
-                    'foto_profil' => $foto_profil, // Simpan ke session
-                    'logged_in' => TRUE
-                ];
-                $this->session->set_userdata($sess_data);
-
-                // Update Last Login
-                $this->db->update('users', ['last_login' => date('Y-m-d H:i:s')], ['id' => $user->id]);
-
-                // Hapus session captcha
-                $this->session->unset_userdata('captcha_answer');
-
-                redirect($user->role == 'admin' ? 'admin' : 'peserta');
-            } else {
-                $this->session->set_flashdata('error', 'Password salah!');
-                redirect('auth/login');
-            }
-        } else {
-            $this->session->set_flashdata('error', 'Username tidak ditemukan!');
-            redirect('auth/login');
-        }
+    if ($input_captcha === NULL || $input_captcha != $real_captcha) {
+        $this->session->set_flashdata('error', 'Hasil penjumlahan/pengurangan salah!');
+        redirect('auth/login');
+        return;
     }
+
+    // 2. UPDATE: Lanjut ke Validasi User menggunakan EMAIL
+    $email    = $this->input->post('email', TRUE); // Ambil input email
+    $password = $this->input->post('password');
+
+    // Cari user berdasarkan EMAIL
+    $user = $this->db->get_where('users', ['email' => $email])->row();
+
+    if ($user) {
+        // Verifikasi Hash Password
+        if (password_verify($password, $user->password)) {
+            
+            // --- LOGIC FOTO PROFIL (CODE LAMA TETAP SAMA) ---
+            $foto_profil = null;
+            $pendaftar = $this->db->get_where('pendaftar', ['user_id' => $user->id])->row();
+            
+            if ($pendaftar) {
+                $doc_foto = $this->db->get_where('dokumen', [
+                    'pendaftar_id' => $pendaftar->id, 
+                    'jenis_dokumen' => 'foto'
+                ])->row();
+
+                if ($doc_foto) {
+                    $foto_profil = $doc_foto->file_path;
+                }
+            }
+
+            $sess_data = [
+                'user_id' => $user->id,
+                'username' => $user->username, // Tetap simpan username di session jika ada logic lain yg butuh
+                'email' => $user->email,       // Tambahan session email
+                'role' => $user->role,
+                'nama_lengkap' => $user->nama_lengkap,
+                'foto_profil' => $foto_profil,
+                'logged_in' => TRUE
+            ];
+            $this->session->set_userdata($sess_data);
+
+            // Update Last Login
+            $this->db->update('users', ['last_login' => date('Y-m-d H:i:s')], ['id' => $user->id]);
+
+            $this->session->unset_userdata('captcha_answer');
+            redirect($user->role == 'admin' ? 'admin' : 'peserta');
+        } else {
+            $this->session->set_flashdata('error', 'Password salah!');
+            redirect('auth/login');
+        }
+    } else {
+        $this->session->set_flashdata('error', 'Email tidak terdaftar!');
+        redirect('auth/login');
+    }
+}
 
     public function logout()
     {

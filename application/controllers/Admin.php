@@ -44,62 +44,92 @@ class Admin extends CI_Controller {
         $this->render_view('admin/detail_berkas', $data);
     }
 
-    public function verifikasi($id, $status)
-    {
-        if (!in_array($status, ['diterima', 'ditolak'])) redirect('admin');
+    public function verifikasi($id, $status, $kirim_wa = 1)
+{
+    if (!in_array($status, ['diterima', 'ditolak'])) redirect('admin');
 
-        $pendaftar = $this->db->get_where('pendaftar', ['id' => $id])->row();
-        if (!$pendaftar) show_404();
+    $pendaftar = $this->db->get_where('pendaftar', ['id' => $id])->row();
+    if (!$pendaftar) show_404();
 
-        $this->db->trans_start();
+    require_once FCPATH . 'vendor/autoload.php'; // Load Composer Autoload (untuk DomPDF)
 
-        $this->db->update('pendaftar', ['status' => $status], ['id' => $id]);
+    $this->db->trans_start();
 
-        $pesan_wa = '';
+    // Data update default
+    $update_data = ['status' => $status];
+    $pesan_wa = '';
+    
+    // --- LOGIKA JIKA DITERIMA: GENERATE PDF & BUAT USER ---
+    if ($status === 'diterima') {
+        
+        // 1. Generate Surat Balasan PDF
+        $filename_surat = 'Surat_Balasan_' . str_replace(' ', '_', $pendaftar->nama) . '_' . date('YmdHis') . '.pdf';
+        $save_path = FCPATH . 'assets/uploads/surat_balasan/';
+        
+        // Buat folder jika belum ada
+        if (!is_dir($save_path)) {
+            mkdir($save_path, 0777, true);
+        }
 
-        if ($status === 'diterima' && $pendaftar->user_id === NULL) {
+        // Load View ke String HTML
+        $html = $this->load->view('laporan/surat_balasan', ['pendaftar' => $pendaftar], TRUE);
 
-            $username = 'MAGANG' . rand(1000, 9999);
+        // Render PDF
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        
+        // Simpan ke File
+        file_put_contents($save_path . $filename_surat, $dompdf->output());
+
+        // Masukkan nama file ke array update
+        $update_data['file_surat_balasan'] = $filename_surat;
+
+        // 2. Buat User Login (Seperti sebelumnya)
+        if ($pendaftar->user_id === NULL) {
             $password_plain = '123456';
-
             $this->db->insert('users', [
-                'username' => $username,
+                'username' => 'MAGANG' . rand(1000, 9999),
+                'email'    => $pendaftar->email,
                 'password' => password_hash($password_plain, PASSWORD_DEFAULT),
                 'role' => 'peserta',
                 'nama_lengkap' => $pendaftar->nama
             ]);
+            $update_data['user_id'] = $this->db->insert_id();
 
-            $user_id = $this->db->insert_id();
-
-            $this->db->update('pendaftar', ['user_id' => $user_id], ['id' => $id]);
-
-            $pesan_wa =
-                "Halo *{$pendaftar->nama}*,\n\n".
-                "Selamat! Anda DINYATAKAN DITERIMA sebagai peserta magang di BPS Banten.\n\n".
-                "Periode: {$pendaftar->tgl_mulai} s/d {$pendaftar->tgl_selesai}\n\n".
-                "Login:\nUsername: {$username}\nPassword: {$password_plain}\n\n".
-                "Alamat: KP3B Serang, Banten.";
-
-        } elseif ($status === 'ditolak') {
-
-            $pesan_wa =
-                "Halo *{$pendaftar->nama}*,\n\n".
-                "Terima kasih telah mendaftar magang di BPS Banten.\n".
-                "Mohon maaf, Anda BELUM DAPAT kami terima.\n\n".
-                "Tetap semangat dan sukses selalu.";
+            // Template WA Diterima
+            $pesan_wa = "Halo *{$pendaftar->nama}*,\n\n".
+                "Selamat! Anda DINYATAKAN DITERIMA magang di BPS Banten.\n".
+                "Surat Balasan resmi telah diterbitkan dan dapat diunduh di dashboard.\n\n".
+                "Login Akun:\nEmail: {$pendaftar->email}\nPass: {$password_plain}\n\n".
+                "Terima kasih.";
         }
-
-        $this->db->trans_complete();
-
-        if ($this->db->trans_status() === TRUE && $pesan_wa) {
-            $this->wa_client->send_message($pendaftar->no_hp, $pesan_wa);
-            $this->session->set_flashdata('success', 'Status diperbarui & WA terkirim');
-        } else {
-            $this->session->set_flashdata('error', 'Gagal memproses data');
-        }
-
-        redirect('admin');
+    } 
+    // --- LOGIKA JIKA DITOLAK ---
+    elseif ($status === 'ditolak') {
+        $pesan_wa = "Halo *{$pendaftar->nama}*,\n\nMohon maaf, pengajuan magang Anda belum dapat kami terima saat ini.\nTetap semangat!";
     }
+
+    // 3. Eksekusi Update Database
+    $this->db->update('pendaftar', $update_data, ['id' => $id]);
+
+    $this->db->trans_complete();
+
+    // 4. Kirim WA
+    if ($this->db->trans_status() === TRUE) {
+        if ($kirim_wa == 1 && !empty($pesan_wa)) {
+            $this->wa_client->send_message($pendaftar->no_hp, $pesan_wa);
+            $this->session->set_flashdata('success', 'Status Diterima, Surat Terbit & WA Terkirim.');
+        } else {
+            $this->session->set_flashdata('success', 'Status diperbarui (Tanpa WA).');
+        }
+    } else {
+        $this->session->set_flashdata('error', 'Gagal memproses data.');
+    }
+
+    redirect($_SERVER['HTTP_REFERER'] ?? 'admin');
+}
 
     public function set_selesai($id)
     {

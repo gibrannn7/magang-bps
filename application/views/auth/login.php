@@ -72,36 +72,36 @@
             </div>
 
             <form action="<?= base_url('auth/process_login') ?>" method="POST" autocomplete="off">
-                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+    <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
-                <div class="mb-5">
-                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Username</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-                            <i class="fas fa-user"></i>
-                        </span>
-                        <input type="text" name="username" 
-                               class="form-input w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-50 focus:bg-white outline-none" 
-                               placeholder="Masukkan username anda" required autofocus>
-                    </div>
-                </div>
+    <div class="mb-5">
+        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Email Address</label>
+        <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
+                <i class="fas fa-envelope"></i>
+            </span>
+            <input type="email" name="email" 
+                   class="form-input w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-50 focus:bg-white outline-none" 
+                   placeholder="Masukkan email anda" required autofocus>
+        </div>
+    </div>
 
-                <div class="mb-5">
-                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Password</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-                            <i class="fas fa-lock"></i>
-                        </span>
-                        <input type="password" name="password" id="password"
-                               class="form-input w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-50 focus:bg-white outline-none" 
-                               placeholder="Masukkan password" required>
-                        
-                        <button type="button" onclick="togglePassword()" 
-                                class="absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 hover:text-bps-blue transition cursor-pointer focus:outline-none">
-                            <i class="fas fa-eye" id="eye-icon"></i>
-                        </button>
-                    </div>
-                </div>
+    <div class="mb-5">
+        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Password</label>
+        <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
+                <i class="fas fa-lock"></i>
+            </span>
+            <input type="password" name="password" id="password"
+                   class="form-input w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-50 focus:bg-white outline-none" 
+                   placeholder="Masukkan password" required>
+            
+            <button type="button" onclick="togglePassword()" 
+                    class="absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 hover:text-bps-blue transition cursor-pointer focus:outline-none">
+                <i class="fas fa-eye" id="eye-icon"></i>
+            </button>
+        </div>
+    </div>
 
                 <div class="mb-8">
                     <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Keamanan</label>

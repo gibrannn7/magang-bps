@@ -11,6 +11,10 @@
                     <th style="width: 30%;">Nama Lengkap</th>
                     <td><?= $pendaftar->nama ?></td>
                 </tr>
+				<tr>
+					<th>Email</th>
+					<td><?= $pendaftar->email ?></td>
+				</tr>
                 <tr>
                     <th>NIM / NIS</th>
                     <td><?= $pendaftar->nim_nis ?></td>
@@ -91,32 +95,66 @@
                     </td>
                 </tr>
 
+				<?php if($pendaftar->status == 'pending'): ?>
+					<tr class="bg-light">
+						<th class="align-middle">Aksi Verifikasi</th>
+						<td>
+							<div class="d-flex">
+								<button type="button" 
+									onclick="confirmAction('<?= base_url('admin/verifikasi/'.$pendaftar->id.'/diterima') ?>', 'terima')"
+									class="btn btn-success mr-2 font-weight-bold">
+									<i class="fas fa-check-circle"></i> Terima Peserta
+								</button>
+
+								<button type="button" 
+									onclick="confirmAction('<?= base_url('admin/verifikasi/'.$pendaftar->id.'/ditolak') ?>', 'tolak')"
+									class="btn btn-danger font-weight-bold">
+									<i class="fas fa-times-circle"></i> Tolak Peserta
+								</button>
+							</div>
+							<small class="text-muted mt-2 d-block">*Anda akan diminta konfirmasi pengiriman WhatsApp setelah klik tombol.</small>
+						</td>
+					</tr>
+					<?php endif; ?>
+										<?php if(!empty($pendaftar->file_surat_balasan) && file_exists(FCPATH . 'assets/uploads/surat_balasan/' . $pendaftar->file_surat_balasan)): ?>
+					<tr>
+						<th>Surat Balasan Resmi</th>
+						<td>
+							<a href="<?= base_url('assets/uploads/surat_balasan/' . $pendaftar->file_surat_balasan) ?>" 
+							target="_blank" 
+							class="btn btn-primary btn-sm">
+								<i class="fas fa-file-pdf"></i> Download Surat Balasan
+							</a>
+							<div class="text-muted text-xs mt-1">Dibuat otomatis oleh sistem</div>
+						</td>
+					</tr>
+					<?php endif; ?>
+
                 <?php 
-                if(in_array($pendaftar->status, ['diterima', 'aktif', 'selesai']) && !empty($pendaftar->user_id)): 
-                    // Ambil data user langsung dari view agar tidak perlu ubah controller
-                    $user_account = $this->db->get_where('users', ['id' => $pendaftar->user_id])->row();
-                    if($user_account):
-                ?>
-                <tr class="bg-white">
-                    <th colspan="2" class="text-center text-bold text-dark">
-                        <i class="fas fa-key"></i> AKUN LOGIN PESERTA
-                    </th>
-                </tr>
-                <tr>
-                    <th>Username</th>
-                    <td class="text-bold text-primary"><?= $user_account->username ?></td>
-                </tr>
-                <tr>
-                    <th>Password</th>
-                    <td>
-                        <span>123456</span>
-                        <br>
-                    </td>
-                </tr>
-                <?php 
-                    endif; 
-                endif; 
-                ?>
+					if(in_array($pendaftar->status, ['diterima', 'aktif', 'selesai']) && !empty($pendaftar->user_id)): 
+						$user_account = $this->db->get_where('users', ['id' => $pendaftar->user_id])->row();
+						if($user_account):
+					?>
+					<tr class="bg-white">
+						<th colspan="2" class="text-center text-bold text-dark">
+							<i class="fas fa-key"></i> AKUN LOGIN PESERTA
+						</th>
+					</tr>
+					<tr>
+						<th>Email Login</th>
+						<td class="text-bold text-primary"><?= $user_account->email ?></td>
+					</tr>
+					<tr>
+						<th>Password Default</th>
+						<td>
+							<span>123456</span>
+							<br>
+						</td>
+					</tr>
+					<?php 
+						endif; 
+					endif; 
+					?>
 
                 <tr class="bg-light">
                     <th colspan="2" class="text-center text-bold">BERKAS DOKUMEN</th>
@@ -164,3 +202,34 @@
         </table>
     </div>
 </div>
+<script>
+function confirmAction(baseUrl, action) {
+    let title = action === 'terima' ? 'Terima Peserta Ini?' : 'Tolak Peserta Ini?';
+    let text  = action === 'terima'
+        ? 'Akun login akan dibuat otomatis.'
+        : 'Status peserta akan diubah menjadi Ditolak.';
+    let confirmBtnText = action === 'terima' ? 'Ya, Terima & Kirim WA' : 'Ya, Tolak & Kirim WA';
+    let denyBtnText    = action === 'terima' ? 'Terima Tanpa WA' : 'Tolak Tanpa WA';
+    let iconColor      = action === 'terima' ? '#28a745' : '#dc3545';
+
+    Swal.fire({
+        title: title,
+        text: text + ' Apakah ingin mengirim notifikasi WhatsApp?',
+        icon: 'question',
+        showCancelButton: true,
+        showDenyButton: true, 
+        confirmButtonColor: iconColor,
+        denyButtonColor: '#6c757d',
+        cancelButtonColor: '#d33',
+        confirmButtonText: '<i class="fab fa-whatsapp"></i> ' + confirmBtnText,
+        denyButtonText: '<i class="fas fa-eye-slash"></i> ' + denyBtnText,
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = baseUrl + '/1'; 
+        } else if (result.isDenied) {
+            window.location.href = baseUrl + '/0';
+        }
+    });
+}
+</script>

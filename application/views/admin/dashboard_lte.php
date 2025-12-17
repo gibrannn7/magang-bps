@@ -42,30 +42,29 @@
                     <tbody>
                         <?php foreach($pendaftar as $p): if($p->status != 'pending') continue; ?>
                         <tr>
-							<td>
-								<?= $p->nama ?><br>
-								<small class="text-muted"><?= $p->jurusan ?></small>
-							</td>
-							<td><?= $p->institusi ?></td>
-							<td>
-								<a href="<?= base_url('admin/berkas/'.$p->id) ?>" class="btn btn-xs btn-info" title="Lihat Detail">
-									<i class="fas fa-eye"></i> Detail
-								</a>
-								<button type="button"
-										onclick="confirmAction('<?= base_url('admin/verifikasi/'.$p->id.'/diterima') ?>', 'terima')"
-										class="btn btn-xs btn-success"
-										title="Terima">
-									<i class="fas fa-check"></i> Terima
-								</button>
-
-								<button type="button"
-										onclick="confirmAction('<?= base_url('admin/verifikasi/'.$p->id.'/ditolak') ?>', 'tolak')"
-										class="btn btn-xs btn-danger"
-										title="Tolak">
-									<i class="fas fa-times"></i> Tolak
-								</button>
-							</td>
-						</tr>
+                            <td>
+                                <?= $p->nama ?><br>
+                                <small class="text-muted"><?= $p->jurusan ?></small>
+                            </td>
+                            <td><?= $p->institusi ?></td>
+                            <td>
+                                <a href="<?= base_url('admin/berkas/'.$p->id) ?>" class="btn btn-xs btn-info" title="Lihat Detail">
+                                    <i class="fas fa-eye"></i> Detail
+                                </a>
+                                <button type="button"
+                                        onclick="confirmAction('<?= base_url('admin/verifikasi/'.$p->id.'/diterima') ?>', 'terima')"
+                                        class="btn btn-xs btn-success"
+                                        title="Terima">
+                                    <i class="fas fa-check"></i> Terima
+                                </button>
+                                <button type="button"
+                                        onclick="confirmAction('<?= base_url('admin/verifikasi/'.$p->id.'/ditolak') ?>', 'tolak')"
+                                        class="btn btn-xs btn-danger"
+                                        title="Tolak">
+                                    <i class="fas fa-times"></i> Tolak
+                                </button>
+                            </td>
+                        </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
@@ -98,13 +97,23 @@
                                 <a href="<?= base_url('admin/rekap_absensi/'.$p->user_id) ?>" target="_blank" class="btn btn-xs btn-default border" title="Rekap Absensi">
                                     <i class="fas fa-file-pdf text-danger"></i> Rekap
                                 </a>
-                                <button type="button"
-									onclick="confirmTamatkan('<?= base_url('admin/set_selesai/'.$p->id) ?>')"
-									class="btn btn-xs btn-warning font-weight-bold"
-									title="Tamatkan">
-								<i class="fas fa-flag-checkered"></i> Tamatkan
-							</button>
 
+                                <?php if($p->user_id): ?>
+                                <button 
+                                    type="button"
+                                    class="btn btn-xs btn-warning btn-reset-pass"
+                                    data-url="<?= base_url('admin/reset_password/'.$p->user_id) ?>"
+                                    data-nama="<?= $p->nama ?>"
+                                    title="Reset Password ke 123456">
+                                    <i class="fas fa-key"></i> Reset
+                                </button>
+                                <?php endif; ?>
+                                <button type="button"
+                                    onclick="confirmTamatkan('<?= base_url('admin/set_selesai/'.$p->id) ?>')"
+                                    class="btn btn-xs btn-primary font-weight-bold"
+                                    title="Tamatkan">
+                                    <i class="fas fa-flag-checkered"></i> Tamat
+                                </button>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -134,10 +143,21 @@
                                 <a href="<?= base_url('admin/berkas/'.$p->id) ?>" class="btn btn-xs btn-info" title="Lihat Detail"><i class="fas fa-eye"></i> Detail</a>
 
                                 <?php if($p->status == 'selesai'): ?>
-                                <a href="<?= base_url('admin/rekap_absensi/'.$p->user_id) ?>" target="_blank" class="btn btn-xs btn-default border" title="Rekap Akhir">
-                                    <i class="fas fa-file-pdf text-danger"></i> Rekap
-                                </a>
-                                <?php endif; ?>
+                                    <a href="<?= base_url('admin/rekap_absensi/'.$p->user_id) ?>" target="_blank" class="btn btn-xs btn-default border" title="Rekap Akhir">
+                                        <i class="fas fa-file-pdf text-danger"></i> Rekap
+                                    </a>
+                                    
+                                    <?php if($p->user_id): ?>
+                                    <button 
+                                        type="button"
+                                        class="btn btn-xs btn-warning btn-reset-pass"
+                                        data-url="<?= base_url('admin/reset_password/'.$p->user_id) ?>"
+                                        data-nama="<?= $p->nama ?>"
+                                        title="Reset Password">
+                                        <i class="fas fa-key"></i> Reset
+                                    </button>
+                                    <?php endif; ?>
+                                    <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -149,39 +169,79 @@
 </div>
 
 <script>
-function confirmAction(url, action) {
-    let title = action === 'terima' ? 'Terima Peserta?' : 'Tolak Peserta?';
+// Logic Konfirmasi Penerimaan/Penolakan
+function confirmAction(baseUrl, action) {
+    let title = action === 'terima' ? 'Terima Peserta Ini?' : 'Tolak Peserta Ini?';
     let text  = action === 'terima'
-        ? 'Peserta akan diterima dan notifikasi WA akan dikirim.'
-        : 'Peserta akan ditolak.';
+        ? 'Akun login akan dibuat otomatis.'
+        : 'Status peserta akan diubah menjadi Ditolak.';
+    let confirmBtnText = action === 'terima' ? 'Ya, Terima & Kirim WA' : 'Ya, Tolak & Kirim WA';
+    let denyBtnText    = action === 'terima' ? 'Terima Tanpa WA' : 'Tolak Tanpa WA';
+    let iconColor      = action === 'terima' ? '#28a745' : '#dc3545';
 
     Swal.fire({
         title: title,
-        text: text,
-        icon: 'warning',
+        text: text + ' Apakah ingin mengirim notifikasi WhatsApp?',
+        icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Ya',
+        showDenyButton: true, // Tombol Tambahan
+        confirmButtonColor: iconColor,
+        denyButtonColor: '#6c757d',
+        cancelButtonColor: '#d33',
+        confirmButtonText: '<i class="fab fa-whatsapp"></i> ' + confirmBtnText,
+        denyButtonText: '<i class="fas fa-eye-slash"></i> ' + denyBtnText,
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = url;
+            // Pilihan YA (Kirim WA) -> Param ke-3 = 1
+            window.location.href = baseUrl + '/1'; 
+        } else if (result.isDenied) {
+            // Pilihan DENY (Tanpa WA) -> Param ke-3 = 0
+            window.location.href = baseUrl + '/0';
         }
     });
 }
 
+// Logic Tamatkan Magang
 function confirmTamatkan(url) {
     Swal.fire({
         title: 'Tamatkan Magang?',
         text: 'Status peserta akan dipindahkan ke arsip / selesai.',
         icon: 'warning',
+		iconColor: '#1261f3',
         showCancelButton: true,
         confirmButtonText: 'Ya, Tamatkan',
         cancelButtonText: 'Batal',
-        confirmButtonColor: '#f39c12'
+        confirmButtonColor: '#1261f3ff'
     }).then((result) => {
         if (result.isConfirmed) {
             window.location.href = url;
         }
     });
 }
+
+// UPDATE: LOGIC RESET PASSWORD (Sama persis dengan data_peserta.php)
+document.addEventListener('click', function(e) {
+    // Menggunakan event delegation agar bekerja pada elemen dinamis/tab
+    if (e.target.closest('.btn-reset-pass')) {
+        const btn = e.target.closest('.btn-reset-pass');
+        const url = btn.getAttribute('data-url');
+        const nama = btn.getAttribute('data-nama');
+
+        Swal.fire({
+            title: 'Reset Password?',
+            html: `Password user <b>${nama}</b> akan direset menjadi:<br><b style="font-size:1.2em">123456</b>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f39c12',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Reset!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = url;
+            }
+        });
+    }
+});
 </script>

@@ -90,7 +90,7 @@
         <div class="max-w-5xl" data-aos="fade-up" data-aos-duration="1000">
             <div class="inline-block px-4 py-1 mb-4 border border-white/30 rounded-full bg-white/10 backdrop-blur-sm">
                 <span class="text-bps-accent font-semibold text-sm tracking-wide uppercase">
-                    <i class="fas fa-chart-pie mr-2"></i> Penerimaan Magang & PKL 2025
+                    <i class="fas fa-chart-pie mr-2"></i> Penerimaan Magang & PKL BPS
                 </span>
             </div>
             <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight drop-shadow-xl">
@@ -197,13 +197,19 @@
                     <div id="form-step-1" class="space-y-8">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap</label>
-                                <input type="text" name="nama" required class="w-full rounded-xl border-gray-300 focus:border-bps-light focus:ring-bps-light px-5 py-3 border transition shadow-sm bg-gray-50 focus:bg-white" placeholder="Sesuai KTP/KTM">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nomor WhatsApp</label>
-                                <input type="number" name="no_hp" placeholder="Contoh: 08123456789" required class="w-full rounded-xl border-gray-300 focus:border-bps-light focus:ring-bps-light px-5 py-3 border transition shadow-sm bg-gray-50 focus:bg-white">
-                            </div>
+								<label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap</label>
+								<input type="text" name="nama" required class="w-full rounded-xl border-gray-300 focus:border-bps-light focus:ring-bps-light px-5 py-3 border transition shadow-sm bg-gray-50 focus:bg-white" placeholder="Sesuai KTP/KTM">
+							</div>
+
+							<div>
+								<label class="block text-sm font-semibold text-gray-700 mb-2">Alamat Email (Aktif)</label>
+								<input type="email" name="email" required class="w-full rounded-xl border-gray-300 focus:border-bps-light focus:ring-bps-light px-5 py-3 border transition shadow-sm bg-gray-50 focus:bg-white" placeholder="contoh@email.com">
+								<small class="text-gray-500">Email ini akan digunakan untuk <b>Login</b>.</small>
+							</div>
+							<div>
+								<label class="block text-sm font-semibold text-gray-700 mb-2">Nomor WhatsApp</label>
+								<input type="number" name="no_hp" placeholder="Contoh: 08123456789" required class="w-full rounded-xl border-gray-300 focus:border-bps-light focus:ring-bps-light px-5 py-3 border transition shadow-sm bg-gray-50 focus:bg-white">
+							</div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Status Peserta</label>
                                 <div class="relative">
