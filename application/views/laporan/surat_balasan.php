@@ -15,7 +15,24 @@
         table.content-table { width: 100%; margin-top: 10px; border-collapse: collapse; }
         table.content-table td { vertical-align: top; padding: 2px; }
         
-        .ttd-box { float: right; width: 250px; margin-top: 40px; }
+        /* Update CSS TTD Box agar posisi tanggal pas */
+        .ttd-box { float: right; width: 300px; margin-top: 40px; text-align: left; }
+        
+        /* Footer BSrE */
+        .bsre-footer {
+            clear: both;
+            margin-top: 50px;
+            font-size: 10pt;
+            color: #555;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+            text-align: center;
+            font-style: italic;
+            position: fixed; 
+            bottom: 0;
+            left: 0; 
+            right: 0;
+        }
     </style>
 </head>
 <body>
@@ -71,8 +88,6 @@
         Tempat
     </p>
 
-    <p align="right">Serang, <?= date('d F Y') ?></p>
-
     <p style="text-align: justify;">
         Menindaklanjuti surat Nomor: <?= $pendaftar->no_surat ?> tanggal <?= date('d F Y', strtotime($pendaftar->tgl_surat)) ?>
         tentang Permohonan Izin KKP (Kuliah Kerja Praktik) mahasiswa sebagai berikut :
@@ -112,9 +127,15 @@
     </p>
 
     <div class="ttd-box">
-        Plt. Kepala BPS Provinsi Banten,<br><br><br><br><br>
-        <b>Ridwan Hidayat</b><br>
-        <small style="font-style: italic; color: gray;">Dokumen ini telah ditandatangani secara elektronik</small>
+        Serang, <?= date('d F Y') ?>
+        <br>
+        Plt. Kepala BPS Provinsi Banten,
+        <br><br><br><br><br>
+        <b>Ridwan Hidayat</b>
+    </div>
+
+    <div class="bsre-footer">
+        Dokumen ini telah ditanda tangani secara elektronik menggunakan sertifikat elektronik yang diterbitkan oleh Balai Besar Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara (BSSN).
     </div>
 
 </body>

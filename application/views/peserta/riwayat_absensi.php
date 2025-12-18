@@ -27,15 +27,17 @@
                         </span>
                     </td>
                     <td>
-                        <?php if($row->status == 'izin'): ?>
-                            <?= $row->keterangan ?>
-                        <?php else: ?>
-                            <small class="text-muted">
-                                <i class="fas fa-map-marker-alt"></i> 
-                                <?= $row->lat_datang ?>, <?= $row->long_datang ?>
-                            </small>
-                        <?php endif; ?>
-                    </td>
+						<?php if($row->status == 'izin'): ?>
+							<div class="mb-1"><strong><?= strtoupper($row->jenis_izin ?? 'IZIN') ?>:</strong> <?= $row->keterangan ?></div>
+							<?php if(!empty($row->bukti_izin)): ?>
+								<a href="<?= base_url('assets/uploads/absensi/'.$row->bukti_izin) ?>" target="_blank" class="btn btn-xs btn-outline-primary">
+									<i class="fas fa-image"></i> Lihat Bukti
+								</a>
+							<?php endif; ?>
+						<?php else: ?>
+							<small class="text-muted"><i class="fas fa-map-marker-alt"></i> <?= $row->lat_datang ?>, <?= $row->long_datang ?></small>
+						<?php endif; ?>
+					</td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

@@ -340,4 +340,50 @@ class Admin extends CI_Controller {
         // Redirect kembali ke halaman asal (misal data peserta)
         redirect($_SERVER['HTTP_REFERER']);
     }
+public function monitoring_absensi()
+{
+    $tanggal = $this->input->get('tanggal') ?: date('Y-m-d');
+    $filter_status = $this->input->get('status');
+
+    // Query Mengambil Peserta Aktif dan Join Absensi
+    $this->db->select('u.id as user_id, p.nama, p.institusi, a.jam_datang, a.jam_pulang, a.status as absensi_status, a.bukti_izin, a.keterangan, a.jenis_izin');
+    $this->db->from('users u');
+    $this->db->join('pendaftar p', 'u.id = p.user_id'); 
+    $this->db->join('absensi a', "u.id = a.user_id AND a.tanggal = '$tanggal'", 'left');
+    $this->db->where('u.role', 'peserta');
+    $this->db->where('p.status', 'diterima'); 
+
+    $query_results = $this->db->get()->result();
+
+    foreach ($query_results as $row) {
+        if (!$row->absensi_status) {
+            $row->display_status = 'Belum Absen';
+            $row->label_class = 'badge-secondary';
+        } elseif ($row->absensi_status == 'izin') {
+            $row->display_status = 'Izin (' . strtoupper($row->jenis_izin) . ')';
+            $row->label_class = 'badge-warning';
+        } else {
+            $row->display_status = 'Masuk';
+            $row->label_class = 'badge-success';
+        }
+    }
+
+    if ($filter_status) {
+        $query_results = array_filter($query_results, function($item) use ($filter_status) {
+            if ($filter_status == 'masuk') return ($item->display_status == 'Masuk');
+            if ($filter_status == 'izin') return (strpos($item->display_status, 'Izin') !== false);
+            if ($filter_status == 'belum') return ($item->display_status == 'Belum Absen');
+            return true;
+        });
+    }
+
+    $data['absensi'] = $query_results;
+    $data['tanggal'] = $tanggal;
+    $data['filter_status'] = $filter_status;
+    $data['title'] = "Monitoring Absensi Harian";
+
+    // JANGAN memanggil header, navbar, footer secara manual di sini
+    // Gunakan fungsi render_view yang sudah ada di baris 12 Admin.php
+    $this->render_view('admin/monitoring_absensi', $data);
+}
 }

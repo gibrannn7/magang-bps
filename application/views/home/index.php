@@ -529,38 +529,37 @@
     
     <script>
 	document.addEventListener("DOMContentLoaded", function() {
-        const inputMulai = document.querySelector('input[name="tgl_mulai"]');
-        const inputSelesai = document.querySelector('input[name="tgl_selesai"]');
+    const inputMulai = document.querySelector('input[name="tgl_mulai"]');
+    const inputSelesai = document.querySelector('input[name="tgl_selesai"]');
 
-        if(inputMulai && inputSelesai) {
-            inputMulai.addEventListener('change', function() {
-                if(this.value) {
-                    // Ambil tanggal mulai
-                    const tgl = new Date(this.value);
-                    
-                    // Tambah 1 Bulan
-                    tgl.setMonth(tgl.getMonth() + 1);
-                    
-                    // Format ke YYYY-MM-DD
-                    const yyyy = tgl.getFullYear();
-                    const mm = String(tgl.getMonth() + 1).padStart(2, '0');
-                    const dd = String(tgl.getDate()).padStart(2, '0');
-                    
-                    const minDate = `${yyyy}-${mm}-${dd}`;
-                    
-                    // Set Value otomatis
-                    inputSelesai.value = minDate;
-                    
-                    // Set atribut MIN agar tidak bisa pilih tanggal sebelumnya (Validasi Frontend)
-                    inputSelesai.setAttribute('min', minDate);
-                    
-                    // Opsional: Buat readonly agar user TIDAK BISA ubah sama sekali jika peraturan ketat
-                    // inputSelesai.setAttribute('readonly', true); 
-                }
-            });
-        }
-    });
-
+    if(inputMulai && inputSelesai) {
+        inputMulai.addEventListener('change', function() {
+            if(this.value) {
+                // Ambil tanggal mulai
+                const tgl = new Date(this.value);
+                
+                // Tambah 1 Minggu (7 hari)
+                tgl.setDate(tgl.getDate() + 7);
+                
+                // Format ke YYYY-MM-DD
+                const yyyy = tgl.getFullYear();
+                const mm = String(tgl.getMonth() + 1).padStart(2, '0');
+                const dd = String(tgl.getDate()).padStart(2, '0');
+                
+                const minDate = `${yyyy}-${mm}-${dd}`;
+                
+                // Set Value otomatis
+                inputSelesai.value = minDate;
+                
+                // Set atribut MIN agar tidak bisa pilih tanggal sebelumnya (Validasi Frontend)
+                inputSelesai.setAttribute('min', minDate);
+                
+                // Opsional: Buat readonly agar user TIDAK BISA ubah sama sekali jika peraturan ketat
+                // inputSelesai.setAttribute('readonly', true); 
+            }
+        });
+    }
+});
 	
         // Init AOS Animation
         AOS.init({

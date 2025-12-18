@@ -8,9 +8,9 @@ $status_magang = $this->db
 <div class="row">
 
     <div class="col-md-12">
-        <!-- <h3 class="mb-3">
+        <h3 class="mb-3">
             Halo, <?= $this->session->userdata('nama_lengkap') ?>
-        </h3> -->
+        </h3>
 
         <?php if($status_magang == 'selesai'): ?>
         <div class="alert alert-success alert-dismissible">

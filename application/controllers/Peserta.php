@@ -41,133 +41,170 @@ class Peserta extends CI_Controller {
 
     // --- PERBAIKAN UTAMA DISINI ---
     public function submit_absen()
-    {
-        // Set Header JSON agar browser tahu ini respon data, bukan HTML
-        header('Content-Type: application/json');
+	{
+		// Set Header JSON agar browser tahu ini respon data, bukan HTML
+		header('Content-Type: application/json');
 
-        // Siapkan response default + Token CSRF Baru (PENTING untuk AJAX)
-        $response = [
-            'status' => false, 
-            'message' => 'Unknown Error',
-            'csrf_token' => $this->security->get_csrf_hash() 
-        ];
+		// Siapkan response default + Token CSRF Baru (PENTING untuk AJAX)
+		$response = [
+			'status' => false, 
+			'message' => 'Unknown Error',
+			'csrf_token' => $this->security->get_csrf_hash() 
+		];
 
-        try {
-            // 1. Cek Hari (Sabtu=6, Minggu=7 Libur)
-            $hari_ini = date('N'); 
-            if ($hari_ini >= 6) { 
-                throw new Exception('Hari Libur: Absensi tidak dapat dilakukan.');
-            }
+		try {
+			$user_id = $this->session->userdata('user_id');
+			$is_izin = $this->input->post('is_izin');
 
-            // 2. Cek Jam
-            $now = date('H:i:s');
-            // Untuk testing saya set 06:00, sesuaikan kebutuhan
-            if ($now < '06:00:00') {
-                throw new Exception('Absensi belum dibuka. Dimulai pukul 06:00 WIB.');
-            }
+			// --- LOGIC IZIN / SAKIT ---
+			if ($is_izin === 'true') {
+				$tgl_mulai   = $this->input->post('tgl_mulai');
+				$tgl_selesai = $this->input->post('tgl_selesai');
+				$jenis_izin  = $this->input->post('jenis_izin');
+				$keterangan  = $this->input->post('keterangan');
 
-            $user_id = $this->session->userdata('user_id');
-            $today = date('Y-m-d');
-            $is_izin = $this->input->post('is_izin'); 
+				// Validasi input izin
+				if (empty($tgl_mulai) || empty($tgl_selesai) || empty($jenis_izin) || empty($keterangan)) {
+					throw new Exception('Semua data izin wajib diisi!');
+				}
 
-            // --- LOGIC IZIN / SAKIT ---
-            if ($is_izin === 'true') {
-                $jenis_izin = $this->input->post('jenis_izin');
-                $keterangan = $this->input->post('keterangan');
+				// 1. Upload Bukti Izin
+				$config['upload_path']   = './assets/uploads/absensi/';
+				$config['allowed_types'] = 'jpg|jpeg|png';
+				$config['encrypt_name']  = TRUE;
+				$this->load->library('upload', $config);
 
-                if (empty($jenis_izin) || empty($keterangan)) {
-                    throw new Exception('Jenis izin dan keterangan wajib diisi!');
-                }
+				$nama_file_bukti = NULL;
+				if ($this->upload->do_upload('bukti_file')) {
+					$nama_file_bukti = $this->upload->data('file_name');
+				} else {
+					throw new Exception('Gagal upload bukti: ' . $this->upload->display_errors('',''));
+				}
 
-                $cek = $this->db->get_where('absensi', ['user_id' => $user_id, 'tanggal' => $today])->row();
-                if($cek) {
-                    throw new Exception('Anda sudah input absen/izin hari ini.');
-                }
+				// 2. Logika Looping Tanggal
+				$begin = new DateTime($tgl_mulai);
+				$end   = new DateTime($tgl_selesai);
+				$end->modify('+1 day'); // Agar tanggal selesai ikut terhitung
 
-                $this->db->insert('absensi', [
-                    'user_id' => $user_id,
-                    'tanggal' => $today,
-                    'jam_datang' => $now, 
-                    'status' => 'izin', 
-                    'keterangan' => "[$jenis_izin] $keterangan"
-                ]);
+				$interval = DateInterval::createFromDateString('1 day');
+				$period   = new DatePeriod($begin, $interval, $end);
 
-                $response['status'] = true;
-                $response['message'] = 'Pengajuan Izin Berhasil Disimpan.';
-                echo json_encode($response);
-                return;
-            }
+				$count_inserted = 0;
+				foreach ($period as $dt) {
+					$curr_date = $dt->format("Y-m-d");
+					
+					// Lewati jika Sabtu/Minggu (Optional, silakan hapus jika tetap ingin dicatat)
+					if ($dt->format('N') >= 6) continue;
 
-            // --- LOGIC ABSEN HADIR ---
-            $lat_user = $this->input->post('latitude');
-            $long_user = $this->input->post('longitude');
-            $tipe = $this->input->post('tipe');
-            $foto_base64 = $this->input->post('foto');
+					// Cek apakah sudah ada absen di tanggal tersebut
+					$exists = $this->db->get_where('absensi', ['user_id' => $user_id, 'tanggal' => $curr_date])->row();
+					
+					if (!$exists) {
+						$this->db->insert('absensi', [
+							'user_id'    => $user_id,
+							'tanggal'    => $curr_date,
+							'status'     => 'izin',
+							'jenis_izin' => $jenis_izin,
+							'keterangan' => $keterangan,
+							'bukti_izin' => $nama_file_bukti,
+							'jam_datang' => '00:00:00', // Sebagai tanda record izin
+							'jam_pulang' => '00:00:00'
+						]);
+						$count_inserted++;
+					}
+				}
 
-            // Validasi Input
-            if (empty($lat_user) || empty($long_user) || empty($foto_base64)) {
-                throw new Exception('Lokasi atau Foto kosong. Pastikan GPS aktif dan izin kamera diberikan.');
-            }
+				$response['status'] = true;
+				$response['message'] = "Berhasil mengajukan izin selama $count_inserted hari kerja.";
+				echo json_encode($response);
+				return;
+			}
 
-            // Validasi Jarak
-            $jarak_meter = $this->haversineGreatCircleDistance(self::LAT_KANTOR, self::LONG_KANTOR, $lat_user, $long_user);
-            if ($jarak_meter > self::MAX_RADIUS_METER) {
-                throw new Exception('Jarak terlalu jauh (' . round($jarak_meter) . 'm). Wajib di area kantor (Max ' . self::MAX_RADIUS_METER . 'm).');
-            }
+			// --- LOGIC ABSEN HADIR ---
+			// 1. Cek Hari (Sabtu=6, Minggu=7 Libur)
+			$hari_ini = date('N'); 
+			if ($hari_ini >= 6) { 
+				throw new Exception('Hari Libur: Absensi tidak dapat dilakukan.');
+			}
 
-            $cek = $this->db->get_where('absensi', ['user_id' => $user_id, 'tanggal' => $today])->row();
+			// 2. Cek Jam
+			$now = date('H:i:s');
+			// Untuk testing saya set 06:00, sesuaikan kebutuhan
+			if ($now < '06:00:00') {
+				throw new Exception('Absensi belum dibuka. Dimulai pukul 06:00 WIB.');
+			}
 
-            if ($tipe === 'datang') {
-                if ($cek) {
-                    throw new Exception('Anda sudah absen datang hari ini.');
-                }
+			$today = date('Y-m-d');
 
-                // Upload Foto
-                $foto = $this->_save_base64_image($foto_base64, 'datang');
-                if(!$foto) throw new Exception('Gagal menyimpan foto ke server.');
+			$lat_user = $this->input->post('latitude');
+			$long_user = $this->input->post('longitude');
+			$tipe = $this->input->post('tipe');
+			$foto_base64 = $this->input->post('foto');
 
-                $status = ($now > '08:00:00') ? 'telat' : 'hadir';
+			// Validasi Input
+			if (empty($lat_user) || empty($long_user) || empty($foto_base64)) {
+				throw new Exception('Lokasi atau Foto kosong. Pastikan GPS aktif dan izin kamera diberikan.');
+			}
 
-                $this->db->insert('absensi', [
-                    'user_id' => $user_id,
-                    'tanggal' => $today,
-                    'jam_datang' => $now,
-                    'lat_datang' => $lat_user,
-                    'long_datang' => $long_user,
-                    'foto_datang' => $foto,
-                    'status' => $status
-                ]);
+			// Validasi Jarak
+			$jarak_meter = $this->haversineGreatCircleDistance(self::LAT_KANTOR, self::LONG_KANTOR, $lat_user, $long_user);
+			if ($jarak_meter > self::MAX_RADIUS_METER) {
+				throw new Exception('Jarak terlalu jauh (' . round($jarak_meter) . 'm). Wajib di area kantor (Max ' . self::MAX_RADIUS_METER . 'm).');
+			}
 
-            } elseif ($tipe === 'pulang') {
-                if (!$cek) throw new Exception('Anda belum absen datang.');
-                if ($cek->jam_pulang != NULL) throw new Exception('Anda sudah absen pulang hari ini.');
+			$cek = $this->db->get_where('absensi', ['user_id' => $user_id, 'tanggal' => $today])->row();
 
-                $jam_pulang_min = ($hari_ini == 5) ? '16:30:00' : '16:00:00'; 
-                if ($now < $jam_pulang_min) {
-                   // throw new Exception('Belum jam pulang (' . $jam_pulang_min . ').'); // Uncomment jika ketat
-                }
+			if ($tipe === 'datang') {
+				if ($cek) {
+					throw new Exception('Anda sudah absen datang hari ini.');
+				}
 
-                $foto = $this->_save_base64_image($foto_base64, 'pulang');
-                if(!$foto) throw new Exception('Gagal menyimpan foto ke server.');
+				// Upload Foto
+				$foto = $this->_save_base64_image($foto_base64, 'datang');
+				if(!$foto) throw new Exception('Gagal menyimpan foto ke server.');
 
-                $this->db->update('absensi', [
-                    'jam_pulang' => $now,
-                    'lat_pulang' => $lat_user,
-                    'long_pulang' => $long_user,
-                    'foto_pulang' => $foto
-                ], ['id' => $cek->id]);
-            }
+				$status = ($now > '08:00:00') ? 'telat' : 'hadir';
 
-            $response['status'] = true;
-            $response['message'] = 'Absensi Berhasil! Jarak: ' . round($jarak_meter) . 'm';
+				$this->db->insert('absensi', [
+					'user_id' => $user_id,
+					'tanggal' => $today,
+					'jam_datang' => $now,
+					'lat_datang' => $lat_user,
+					'long_datang' => $long_user,
+					'foto_datang' => $foto,
+					'status' => $status
+				]);
 
-        } catch (Exception $e) {
-            $response['status'] = false;
-            $response['message'] = $e->getMessage();
-        }
+			} elseif ($tipe === 'pulang') {
+				if (!$cek) throw new Exception('Anda belum absen datang.');
+				if ($cek->jam_pulang != NULL) throw new Exception('Anda sudah absen pulang hari ini.');
 
-        echo json_encode($response);
-    }
+				$jam_pulang_min = ($hari_ini == 5) ? '16:30:00' : '16:00:00'; 
+				if ($now < $jam_pulang_min) {
+				// throw new Exception('Belum jam pulang (' . $jam_pulang_min . ').'); // Uncomment jika ketat
+				}
+
+				$foto = $this->_save_base64_image($foto_base64, 'pulang');
+				if(!$foto) throw new Exception('Gagal menyimpan foto ke server.');
+
+				$this->db->update('absensi', [
+					'jam_pulang' => $now,
+					'lat_pulang' => $lat_user,
+					'long_pulang' => $long_user,
+					'foto_pulang' => $foto
+				], ['id' => $cek->id]);
+			}
+
+			$response['status'] = true;
+			$response['message'] = 'Absensi Berhasil! Jarak: ' . round($jarak_meter) . 'm';
+
+		} catch (Exception $e) {
+			$response['status'] = false;
+			$response['message'] = $e->getMessage();
+		}
+
+		echo json_encode($response);
+	}
 
     private function haversineGreatCircleDistance($latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthRadius = 6371000)
     {

@@ -59,10 +59,15 @@
 						<li class="nav-item">
 							<a href="<?= base_url('admin') ?>" class="nav-link <?= ($this->uri->segment(1)=='admin' && $this->uri->segment(2)=='')?'active':'' ?>">
 								<i class="nav-icon fas fa-tachometer-alt"></i>
-								<p>Dashboard (Ops)</p>
+								<p>Dashboard</p>
 							</a>
 						</li>
-						
+						<li class="nav-item">
+              <a href="<?= base_url('admin/monitoring_absensi') ?>" class="nav-link <?= ($this->uri->segment(2)=='monitoring_absensi')?'active':'' ?>">
+                <i class="nav-icon fas fa-user-check"></i>
+                <p>Monitoring Absensi</p>
+              </a>
+            </li>
 						<li class="nav-item">
 							<a href="<?= base_url('admin/data_peserta') ?>" class="nav-link <?= ($this->uri->segment(2)=='data_peserta')?'active':'' ?>">
 								<i class="nav-icon fas fa-users"></i>
@@ -99,7 +104,7 @@
 				<?php endif; ?>
 
           <?php if($this->session->userdata('role') == 'peserta'): ?>
-             <li class="nav-item">
+            <li class="nav-item">
               <a href="<?= base_url('peserta') ?>" class="nav-link <?= ($this->uri->segment(1)=='peserta' && $this->uri->segment(2)=='')?'active':'' ?>">
                 <i class="nav-icon fas fa-home"></i>
                 <p>Dashboard</p>
@@ -111,7 +116,14 @@
                 <p>Absensi</p>
               </a>
             </li>
-						<li class="nav-header">PENGATURAN</li>
+
+            <li class="nav-item">
+              <a href="<?= base_url('peserta/riwayat_absensi') ?>" class="nav-link <?= ($this->uri->segment(2)=='riwayat_absensi')?'active':'' ?>">
+                <i class="nav-icon fas fa-history"></i>
+                <p>Riwayat Absensi</p>
+              </a>
+            </li>
+            <li class="nav-header">PENGATURAN</li>
             
             <li class="nav-item">
               <a href="<?= base_url('peserta/ganti_password') ?>" class="nav-link <?= ($this->uri->segment(2)=='ganti_password')?'active':'' ?>">
