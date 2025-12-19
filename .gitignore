@@ -63,3 +63,4 @@ assets/uploads/**
 # =========================
 .env
 
+application/config/email.php

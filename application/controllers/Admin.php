@@ -36,7 +36,7 @@ class Admin extends CI_Controller {
 		// Belum Absen (Total Aktif - Semua yang sudah input data hari ini)
 		$data['belum_absen'] = max(0, $data['aktif'] - ($data['hadir'] + $data['telat'] + $data['absen_izin']));
 
-		$data['pendaftar'] = $this->db->select('pendaftar.*')
+		$data['pendaftar'] = $this->db->select('pendaftar.*, users.email as akun_user') // Pastikan 'pendaftar.*' dan tidak ada '*' di akhir alias
 			->join('users', 'users.id = pendaftar.user_id', 'left')
 			->order_by('pendaftar.id', 'DESC')
 			->get('pendaftar')
@@ -312,7 +312,7 @@ class Admin extends CI_Controller {
         $data['title'] = 'Data Semua Peserta';
         
         // Mengambil semua data tanpa filter status (kecuali user melakukan filter nanti di view)
-        $data['list'] = $this->db->select('pendaftar.*')
+        $data['list'] = $this->db->select('pendaftar.*, users.email')
             ->join('users', 'users.id = pendaftar.user_id', 'left')
             ->order_by('pendaftar.id', 'DESC')
             ->get('pendaftar')

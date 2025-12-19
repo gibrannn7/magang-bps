@@ -1,0 +1,20 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+/**
+ * Konfigurasi Email (Brevo SMTP)
+ * Copy file ini menjadi email.php dan isi dengan kredensial asli
+ */
+$config = [
+    'protocol'    => 'smtp',
+    'smtp_host'   => 'smtp-relay.brevo.com',
+    'smtp_port'   => 587,
+    'smtp_user'   => 'YOUR_EMAIL_HERE',
+    'smtp_pass'   => 'YOUR_SMTP_KEY_HERE',
+    'smtp_crypto' => 'tls',
+    'mailtype'    => 'html',
+    'charset'     => 'utf-8',
+    'newline'     => "\r\n",
+    'wordwrap'    => TRUE,
+    'crlf'        => "\r\n"
+];
