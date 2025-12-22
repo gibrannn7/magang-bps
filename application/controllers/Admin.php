@@ -62,8 +62,14 @@ class Admin extends CI_Controller {
 
     public function verifikasi($id, $status) {
     if (!in_array($status, ['diterima', 'ditolak'])) redirect('admin');
+    
+    // 1. Ambil data pendaftar
     $pendaftar = $this->M_Admin->get_pendaftar_by_id($id);
     if (!$pendaftar) show_404();
+
+    // 2. DIAGNOSA FIX: Update properti status di objek PHP sebelum generate PDF
+    // Agar view 'laporan/surat_balasan' membaca status yang benar
+    $pendaftar->status = $status; 
 
     require_once FCPATH . 'vendor/autoload.php'; 
 
@@ -71,7 +77,6 @@ class Admin extends CI_Controller {
 
     // --- CASE TERIMA ---
     if ($status === 'diterima') {
-        // Buat akun tanpa kirim notif
         $password_plain = '123456';
         $data_user = [
             'email' => $pendaftar->email,
@@ -80,23 +85,8 @@ class Admin extends CI_Controller {
             'nama_lengkap' => $pendaftar->nama
         ];
         
-        // Generate Draft PDF
+        // Generate Draft PDF (Sekarang $pendaftar->status sudah 'diterima')
         $filename = 'Draft_Terima_' . time() . '.pdf';
-        $html = $this->load->view('laporan/surat_balasan', ['pendaftar' => $pendaftar], TRUE);
-        $dompdf = new \Dompdf\Dompdf();
-        $dompdf->loadHtml($html);
-        $dompdf->render();
-        file_put_contents(FCPATH . 'assets/uploads/surat_balasan/' . $filename, $dompdf->output());
-
-        $update_data['file_draft_balasan'] = $filename;
-        $this->M_Admin->proses_verifikasi_diterima($id, $update_data, $data_user);
-        $this->session->set_flashdata('success', 'Status Berhasil Diubah. Akun Dibuat & Draft Tersedia.');
-    } 
-    // --- CASE TOLAK ---
-    else {
-        // Generate Draft PDF (Isi surat otomatis berubah karena status di DB nanti sudah 'ditolak')
-        $filename = 'Draft_Tolak_' . time() . '.pdf';
-        $pendaftar->status = 'ditolak'; // bypass status untuk view
         $html = $this->load->view('laporan/surat_balasan', ['pendaftar' => $pendaftar], TRUE);
         
         $dompdf = new \Dompdf\Dompdf();
@@ -105,9 +95,29 @@ class Admin extends CI_Controller {
         file_put_contents(FCPATH . 'assets/uploads/surat_balasan/' . $filename, $dompdf->output());
 
         $update_data['file_draft_balasan'] = $filename;
+        
+        // Update DB & Create User
+        $this->M_Admin->proses_verifikasi_diterima($id, $update_data, $data_user);
+        $this->session->set_flashdata('success', 'Peserta diterima & Akun telah dibuat.');
+    } 
+    // --- CASE TOLAK ---
+    else {
+        // Generate Draft PDF (Sekarang $pendaftar->status sudah 'ditolak')
+        $filename = 'Draft_Tolak_' . time() . '.pdf';
+        $html = $this->load->view('laporan/surat_balasan', ['pendaftar' => $pendaftar], TRUE);
+        
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->render();
+        file_put_contents(FCPATH . 'assets/uploads/surat_balasan/' . $filename, $dompdf->output());
+
+        $update_data['file_draft_balasan'] = $filename;
+        
+        // Update DB
         $this->db->update('pendaftar', $update_data, ['id' => $id]);
-        $this->session->set_flashdata('success', 'Status Berhasil Diubah. Draft Penolakan Tersedia.');
+        $this->session->set_flashdata('success', 'Peserta ditolak.');
     }
+    
     redirect('admin/berkas/'.$id);
 }
 
